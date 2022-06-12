@@ -1,0 +1,79 @@
+version: '3'
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - ./nginx/sites:/etc/nginx/conf.d
+    ports:
+      - ${APP_LISTEN_PORT}:80
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - server
+      - vite
+  vite:
+    build: 
+      context: ./vite
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./vite:/usr/src/app
+      - /usr/src/app/node_modules
+    command: "yarn dev"
+    networks:
+      - frontend
+  server:
+    build: 
+      context: ./server
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - FASTAPI_DEBUG_PORT=${FASTAPI_DEBUG_PORT}
+    volumes:
+      - ./server:/usr/src/app
+    ports:
+      - ${FASTAPI_DEBUG_PORT}:${FASTAPI_DEBUG_PORT}
+    command: "uvicorn app.main:app --proxy-headers --host 0.0.0.0 --port 3000 --reload"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - mysql
+  postgres:
+    image: postgres
+    volumes:
+      - PGDATA:/var/lib/postgresql/data
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - backend
+  pgadmin:
+    image: dpage/pgadmin4
+    volumes:
+      - PGADMIN:/var/lib/pgadmin
+    ports:
+      - 5500:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    networks:
+      - backend
+
+volumes:
+    PGDATA:
+    PGADMIN:

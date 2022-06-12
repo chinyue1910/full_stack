@@ -1,0 +1,18 @@
+fastapi
+pydantic[email]
+uvicorn[standard]
+# To receive uploaded files
+python-multipart
+# JWT tokens
+python-jose
+cryptography
+# password hashes
+passlib[bcrypt]
+sqlalchemy
+pytest
+alembic
+debugpy
+psycopg2
+python-dotenv
+# ORJSONResponse
+orjson
